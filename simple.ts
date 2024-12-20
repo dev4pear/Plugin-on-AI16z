@@ -4,11 +4,11 @@ import {
     TransferSolAction,
     TransferSplAction,
     SwapAction
-} from '../src';
+} from './src';
 
 async function main() {
     const config = {
-        apiKey: 'your-api-key',
+        apiKey: '0d2855d1-5867-4042-9a01-7d56dbd61a58',
         endpoint: 'https://api.emblemvault.ai'
     };
 
