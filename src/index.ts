@@ -1,5 +1,20 @@
-export * from './actions';
-export * from './provider/VaultProvider';
+import { Plugin } from '@ai16z/eliza';
+import { transferAction } from './actions/transferAction';
+import { swapAction } from './actions/swapAction';
+import { balanceAction } from './actions/balanceAction';
+import { EmblemProvider } from './providers/emblemProvider';
+
 export * from './types';
-export * from './utils/api';
-export { defaultConfig } from './config';
+
+const plugin: Plugin = {
+    name: 'emblemvault',
+    version: '1.0.0',
+    actions: {
+        transfer: transferAction,
+        swap: swapAction,
+        balance: balanceAction
+    },
+    provider: EmblemProvider
+};
+
+export default plugin;

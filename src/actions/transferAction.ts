@@ -9,32 +9,24 @@ import {
     generateObject,
     ModelClass
 } from '@ai16z/eliza';
-import { SWAP_TEMPLATE } from '../utils/template';
-import { SwapParams, ApiResponse, VaultBalance } from '../types';
+import { TRANSFER_TEMPLATE } from '../utils/template';
+import { TransferParams, ApiResponse, VaultBalance } from '../types';
 import { EmblemProvider } from '../providers/emblemProvider';
 
-export const swapAction: Action = {
-    name: 'solana_swap',
-    description: 'Swap tokens within an EmblemVault on Solana',
+export const transferAction: Action = {
+    name: 'solana_transfer',
+    description: 'Transfer SOL or SPL tokens from an EmblemVault',
     similes: [
-        'exchange tokens in vault',
-        'swap SPL tokens',
-        'convert tokens in vault'
+        'send SOL to an address',
+        'transfer SPL tokens',
+        'send tokens from vault'
     ],
     examples: [
         [
             {
             user: 'user1',
             content: {
-                text: 'Swap 1 SOL for USDC in vault v123'
-            }
-            }
-        ],
-        [
-            {
-            user: 'user2',
-            content: {
-                text: 'Exchange 10 USDC for SOL in vault v456'
+                text: 'Transfer 1 SOL from vault v123 to address abc...'
             }
             }
         ]
@@ -48,36 +40,36 @@ export const swapAction: Action = {
     ): Promise<any> => {
         const provider = runtime.getProvider('emblemvault') as EmblemProvider;
         const api = provider.getApi();
-
-        const swapContext = composeContext({
+    
+        const transferContext = composeContext({
             state,
-            template: SWAP_TEMPLATE,
+            template: TRANSFER_TEMPLATE,
         });
-
+    
         const params = await generateObject({
             runtime,
-            context: swapContext,
+            context: transferContext,
             modelClass: ModelClass.LARGE,
         });
-
-        if (!params.vault_id || !params.input_mint || !params.output_mint || !params.amount) {
+    
+        if (!params.vault_id || !params.to_address || !params.amount) {
             const responseMsg = {
-            text: 'Missing required parameters for swap',
+            text: 'Missing required parameters for transfer',
             };
             callback?.(responseMsg);
             return false;
         }
-
+    
         try {
-            const result = await api.post<VaultBalance>('/v1/solana/swap', params);
+            const result = await api.post<VaultBalance>('/v1/solana/transfer', params);
             const responseMsg = {
-            text: `Swap completed successfully! New balance: ${result.data.balance} ${params.output_mint}`,
+            text: `Transfer completed successfully! Transaction ID: ${result.data.vault_id}`,
             };
             callback?.(responseMsg);
             return true;
         } catch (error) {
             const responseMsg = {
-            text: `Error during swap: ${error instanceof Error ? error.message : String(error)}`,
+            text: `Error during transfer: ${error instanceof Error ? error.message : String(error)}`,
             };
             callback?.(responseMsg);
             return false;

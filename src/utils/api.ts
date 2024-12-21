@@ -1,36 +1,58 @@
-import { EmblemConfig } from '../types';
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import { ApiResponse } from '../types';
+import dotenv from 'dotenv';
+dotenv.config();
 
 export class EmblemApi {
+  private client: AxiosInstance;
   private apiKey: string;
-  private endpoint: string;
 
-  constructor(config: EmblemConfig) {
-    this.apiKey = config.apiKey;
-    this.endpoint = config.endpoint;
+  constructor(apiKey: string, baseUrl: string) {
+    this.apiKey = apiKey;
+    this.client = axios.create({
+      baseURL: baseUrl,
+      timeout: 30000, // 30 seconds timeout
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey
+      }
+    });
+
+    // Add request interceptor for logging
+    this.client.interceptors.request.use((config) => {
+      console.debug(`Making ${config.method?.toUpperCase()} request to ${config.url}`);
+      return config;
+    });
+
+    // Add response interceptor for error handling
+    this.client.interceptors.response.use(
+      response => response,
+      error => {
+        if (error.response) {
+          console.error('API Error:', error.response.data);
+          throw new Error(error.response.data.message || 'API request failed');
+        }
+        throw error;
+      }
+    );
   }
 
-  async request<T>(path: string, options: RequestInit = {}): Promise<T> {
-    const url = `${this.endpoint}${path}`;
-    const headers = {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${this.apiKey}`,
-      ...options.headers,
-    };
+  async get<T>(endpoint: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+    const response = await this.client.get(endpoint, config);
+    return response.data;
+  }
 
-    try {
-      const response = await fetch(url, {
-        ...options,
-        headers,
-      });
+  async post<T>(endpoint: string, data: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+    const response = await this.client.post(endpoint, data, config);
+    return response.data;
+  }
 
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `HTTP error! status: ${response.status}`);
-      }
+  updateApiKey(newApiKey: string): void {
+    this.apiKey = newApiKey;
+    this.client.defaults.headers['x-api-key'] = newApiKey;
+  }
 
-      return await response.json();
-    } catch (error) {
-      throw new Error(`API request failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+  updateBaseUrl(newBaseUrl: string): void {
+    this.client.defaults.baseURL = newBaseUrl;
   }
 }
